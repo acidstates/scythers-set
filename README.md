@@ -9,7 +9,8 @@ Press Play to run the film on the map. The red clock shows the time in the world
 one second of the film is one minute for the heroes. The ending of the film is not on the public map.
 
 Play also shows where each hero and each creature is at that second of the film: a coloured dot with a name
-for Ren, Hale, Kade, the squad, the four scientists and each creature. The dots stop where the public map stops.
+for Ren, Hale, Kade, the squad, the four scientists and each creature. The dots stop where the public map stops. Play has two modes: Map shows a wide view with
+the dots in the frame, Shots moves the view to the camera of each scene.
 
 The eight security cameras of Kade hang in their rooms (labels CCTV 1 to CCTV 8). The monitor wall in his guard
 post shows what they see now: press "Kade: his monitor wall".
