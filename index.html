@@ -3492,7 +3492,7 @@ window.__lab.views.push('section'); Object.assign(window.__lab, { setTurn: on =>
     '@media (max-width:760px){#play{top:58px}#playFilm{display:none}#cap .hint{display:none}}';
   document.head.appendChild(css);
   const bar = document.createElement('div'); bar.id = 'play';
-  bar.innerHTML = '<button id="playBtn" title="Play the film on the map">▶</button>' +
+  bar.innerHTML = '<button id="playBtn" title="Play the film on the map">▶︎</button>' +
     '<input id="playPos" type="range" min="0" max="' + LEN + '" step="0.1" value="0" aria-label="Film time">' +
     '<span id="playFilm">0:00 / ' + mss(LEN) + '</span><span id="playClock" title="Time in the world of the film: one second of the film is one minute">--:--</span>' +
     '<button id="playSpeed" title="Speed">1x</button>';
@@ -3517,12 +3517,12 @@ window.__lab.views.push('section'); Object.assign(window.__lab, { setTurn: on =>
     if (!playing) return;
     const dt = Math.min(0.25, (now - last) / 1000); last = now;
     t += dt * speed;
-    if (t >= LEN) { t = LEN; playing = false; btn.textContent = '▶'; }
+    if (t >= LEN) { t = LEN; playing = false; btn.textContent = '▶︎'; }
     show(t);
     if (playing) requestAnimationFrame(frame);
   }
   btn.onclick = () => {
-    playing = !playing; btn.textContent = playing ? '❚❚' : '▶';
+    playing = !playing; btn.textContent = playing ? '❚❚' : '▶︎';
     if (playing) { if (t >= LEN) t = 0; if (!used) { used = true; current = -1; } last = performance.now(); show(t); requestAnimationFrame(frame); }
   };
   pos.oninput = () => { t = parseFloat(pos.value); used = true; current = -1; show(t); };
