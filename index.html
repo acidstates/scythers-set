@@ -3541,6 +3541,9 @@ window.__lab.views.push('section'); Object.assign(window.__lab, { setTurn: on =>
   const lineM = new THREE.LineBasicMaterial({ color: 0xff5a4a, transparent: true, opacity: 0.55, depthWrite: false });
   const vest = scene.getObjectByName('vestCeilingCamera');
   const feeds = [];
+  // One shared light for the feeds, always visible (a change of the light count makes three.js select programs again).
+  // Intensity 0 outside a feed draw; during a feed it stands at the camera of that feed.
+  const ir = new THREE.PointLight(0xdfe8ff, 0, 16, 2); ir.name = 'cctvFeedLight'; scene.add(ir);
   for (const [n, text, pos, at] of CAMS) {
     const p = pos ? new THREE.Vector3(...pos) : (vest ? vest.getWorldPosition(new THREE.Vector3()) : null);
     if (!p) continue;
@@ -3564,9 +3567,8 @@ window.__lab.views.push('section'); Object.assign(window.__lab, { setTurn: on =>
     label(text, [p.x, p.y + 0.4, p.z], 'plan small');
     const cam = new THREE.PerspectiveCamera(58, asp, 0.05, 60);
     cam.position.copy(p).add(t.clone().sub(p).normalize().multiplyScalar(0.3)); cam.lookAt(t);   // in front of its own body
-    const ir = new THREE.PointLight(0xdfe8ff, 0, 16, 2); ir.position.copy(cam.position); scene.add(ir);   // intensity 9 only during its feed
     const rt = new THREE.WebGLRenderTarget(320, 230);
-    feeds.push({ n, cam, rt, rig, ir, ground: !pos });
+    feeds.push({ n, cam, rt, rig, ground: !pos });
   }
   // The screens of the wall: an instanced mesh of 8 boxes; a plane with the feed goes 8 mm in front of each.
   const wall = scene.getObjectByName('guardMonitorScreens');
@@ -3589,7 +3591,7 @@ window.__lab.views.push('section'); Object.assign(window.__lab, { setTurn: on =>
   const frustum = new THREE.Frustum(), pv = new THREE.Matrix4(), wallBox = new THREE.Box3();
   if (wall) { wall.updateWorldMatrix(true, false); wallBox.setFromObject(wall); }
   const wallSeen = () => {
-    if (!wall || !document.body || document.hidden) return false;
+    if (!wall || !document.body || document.hidden || plan) return false;   // the plan views look down: the wall is not seen
     camera.updateMatrixWorld(); pv.multiplyMatrices(camera.projectionMatrix, camera.matrixWorldInverse); frustum.setFromProjectionMatrix(pv);
     return frustum.intersectsBox(wallBox) && camera.position.distanceTo(wallBox.getCenter(new THREE.Vector3())) < 30;
   };
@@ -3603,8 +3605,9 @@ window.__lab.views.push('section'); Object.assign(window.__lab, { setTurn: on =>
       const keep = G ? [G.group.visible, vest ? vest.visible : true] : null;
       if (G) { G.group.visible = true; if (vest) vest.visible = false; }
       const shadows = renderer.shadowMap.autoUpdate; renderer.shadowMap.autoUpdate = false;
-      group.visible = false; f.ir.intensity = 9; renderer.setRenderTarget(f.rt); renderer.render(scene, f.cam);
-      renderer.setRenderTarget(old); f.ir.intensity = 0; group.visible = true; renderer.shadowMap.autoUpdate = shadows;
+      ir.position.copy(f.cam.position); ir.intensity = 9;
+      group.visible = false; renderer.setRenderTarget(f.rt); renderer.render(scene, f.cam);
+      renderer.setRenderTarget(old); ir.intensity = 0; group.visible = true; renderer.shadowMap.autoUpdate = shadows;
       if (G) { G.group.visible = keep[0]; if (vest) vest.visible = keep[1]; }
     }
     requestAnimationFrame(feedTick);
