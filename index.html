@@ -3564,13 +3564,14 @@ window.__lab.views.push('section'); Object.assign(window.__lab, { setTurn: on =>
     label(text, [p.x, p.y + 0.4, p.z], 'plan small');
     const cam = new THREE.PerspectiveCamera(58, asp, 0.05, 60);
     cam.position.copy(p).add(t.clone().sub(p).normalize().multiplyScalar(0.3)); cam.lookAt(t);   // in front of its own body
-    const ir = new THREE.PointLight(0xdfe8ff, 9, 16, 2); ir.position.copy(cam.position); ir.visible = false; scene.add(ir);
+    const ir = new THREE.PointLight(0xdfe8ff, 0, 16, 2); ir.position.copy(cam.position); scene.add(ir);   // intensity 9 only during its feed
     const rt = new THREE.WebGLRenderTarget(320, 230);
     feeds.push({ n, cam, rt, rig, ir, ground: !pos });
   }
   // The screens of the wall: an instanced mesh of 8 boxes; a plane with the feed goes 8 mm in front of each.
   const wall = scene.getObjectByName('guardMonitorScreens');
   if (wall && wall.isInstancedMesh) {
+    wall.updateWorldMatrix(true, false);
     const m4 = new THREE.Matrix4(), pos = new THREE.Vector3(), q = new THREE.Quaternion(), s = new THREE.Vector3();
     const order = [4, 5, 6, 7, 0, 1, 2, 3];               // instances 4-7 = the upper row, 0-3 = the lower row
     feeds.forEach((f, i) => {
@@ -3583,18 +3584,28 @@ window.__lab.views.push('section'); Object.assign(window.__lab, { setTurn: on =>
     });
   }
   // One feed per frame. The rigs and the screens are hidden while a feed is drawn, so no screen draws itself.
+  // The feeds are drawn only while the monitor wall is in the view of the main camera, at most 30 m away.
   let next = 0;
+  const frustum = new THREE.Frustum(), pv = new THREE.Matrix4(), wallBox = new THREE.Box3();
+  if (wall) { wall.updateWorldMatrix(true, false); wallBox.setFromObject(wall); }
+  const wallSeen = () => {
+    if (!wall || !document.body || document.hidden) return false;
+    camera.updateMatrixWorld(); pv.multiplyMatrices(camera.projectionMatrix, camera.matrixWorldInverse); frustum.setFromProjectionMatrix(pv);
+    return frustum.intersectsBox(wallBox) && camera.position.distanceTo(wallBox.getCenter(new THREE.Vector3())) < 30;
+  };
   function feedTick() {
-    if (feeds.length) {
+    if (feeds.length && wallSeen()) {
       const f = feeds[next % feeds.length]; next++;
       const old = renderer.getRenderTarget();
       // The vestibule is on the ground level: the map hides that level in most views, so the feed shows it for one draw.
+      // Lights keep their visible state (a change of the light count makes three.js select programs again).
       const G = f.ground && window.__ground ? window.__ground : null;
-      const keep = G ? [G.group.visible, ...G.lights.map(l => l.visible), vest ? vest.visible : true] : null;
-      if (G) { G.group.visible = true; G.lights.forEach(l => { l.visible = true; }); if (vest) vest.visible = false; }
-      group.visible = false; f.ir.visible = true; renderer.setRenderTarget(f.rt); renderer.render(scene, f.cam);
-      renderer.setRenderTarget(old); f.ir.visible = false; group.visible = true;
-      if (G) { G.group.visible = keep[0]; G.lights.forEach((l, i) => { l.visible = keep[1 + i]; }); if (vest) vest.visible = keep[keep.length - 1]; }
+      const keep = G ? [G.group.visible, vest ? vest.visible : true] : null;
+      if (G) { G.group.visible = true; if (vest) vest.visible = false; }
+      const shadows = renderer.shadowMap.autoUpdate; renderer.shadowMap.autoUpdate = false;
+      group.visible = false; f.ir.intensity = 9; renderer.setRenderTarget(f.rt); renderer.render(scene, f.cam);
+      renderer.setRenderTarget(old); f.ir.intensity = 0; group.visible = true; renderer.shadowMap.autoUpdate = shadows;
+      if (G) { G.group.visible = keep[0]; if (vest) vest.visible = keep[1]; }
     }
     requestAnimationFrame(feedTick);
   }
