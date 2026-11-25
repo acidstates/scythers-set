@@ -3475,7 +3475,62 @@ window.__lab.views.push('section'); Object.assign(window.__lab, { setTurn: on =>
   for (const el of document.querySelectorAll('.lbl')) if (HIDE_LABEL.test(el.textContent)) el.classList.add('pubhide');
   if (btns.level2) btns.level2.style.display = 'none';
 })();
-setMode('scheme'); setView('section'); if (innerWidth < 760) document.body.classList.add('nopanel'); loop();
+
+// ---------- Play: the film clock and the scenes of the film on the map (built by play_block.py) ----------
+(() => {
+  const CH = [[0.0, "section", "Title"],[8.0, "freeHall", "Control post: the tracker counts the metres to the thing that got out"],[69.875, "section", "Card: 4 HOURS 53 MINUTES EARLIER"],[72.0, "surface", "Village street: Ren walks to work in the rain"],[90.0, "surface", "The door in the old wall: the card reader"],[98.0, "surfaceVest", "Vestibule: the main lift"],[104.0, "section", "Main lift: down to level -48"],[125.0, "freeHall", "Level 48: along the hall of capsules"],[132.0, "1·14", "Lab: Hale, and Ren at her desk beside the capsule"],[144.0, "5", "Lab: messages from Kade"],[147.0, "u2dKade", "Level two: Kade at his monitors"],[150.0, "5", "Lab: messages from Kade"],[168.0, "9", "Lab: Hale at the console"],[171.0, "10", "Lab: Hale"],[174.0, "11", "Lab: Ren"],[180.0, "12", "Lab: Hale turns to Ren"],[185.0, "13", "Lab: Hale presses the yellow key"],[190.0, "16·17", "Lab: the capsule wakes"],[199.9, "u2dKade", "Level two: Kade sees it on his monitor"],[204.0, "9", "Lab: it is out of the capsule"],[207.0, "u2dKade", "Level two: Kade sends a warning"],[210.0, "11", "Lab: REN. BEHIND YOU."],[216.2, "19", "Lab: the strike"],[217.8, "u2dKade", "Level two: Kade"],[220.8, "21·22", "Service corridor: the lab wall cracks"],[227.3, "24", "Service corridor: Ren falls out of the lab"],[229.5, "25", "Service corridor: the alarm button"],[231.0, "26", "Corridors: Ren runs to the lift"],[234.0, "27", "Corridor C: the lift is open, the scientists wave"],[237.0, "29", "Lift: the cable snaps"],[239.3, "31", "Shaft: the creature goes down after the cabin"],[243.0, "32", "The niche: Ren hides"],[246.0, "33", "The niche: the creature passes her"],[249.0, "35", "The niche: the mask at her face"],[252.0, "36", "The niche: it goes on to the shaft"],[255.0, "32", "The niche: Kade writes, I'm coming down"],[257.958, "E4·1", "Ren at the niche, the lab door far down the corridor"],[260.4, "E4·4", "Lab: the squad finds Ren beside the wounded Hale"],[264.3, "ventPath", "The tracker counts the metres"],[266.3, "E4·7", "Hall of capsules: a ball of blades rolls out"],[268.3, "E4·6", "Hall of capsules: it opens"],[271.3, "E4·6", "Hall of capsules: Kade charges"],[274.1, "freeHall", "Hall of capsules: out of the blast"],[281.9, "E4·14", "Control post: the squad comes in"],[285.333, "section", "Card: 1 HOUR 10 MINUTES LATER"],[287.8, "E4·14", "Control post: the first scene again"],[291.5, "ventPath", "Control post: it drops from the grate of the vent"],[293.9, "E4·14", "Control post: the fight"],[311.9, "E4·14", "Control post: Kade leads Ren on"],[315.3, "-", "The rest of the film is not on the public map"]];
+  const LEN = 419.04, T1 = 69.875, C2 = 285.3333, D = 223.388, OFF = 397.75;
+  const world = t => t < T1 ? t + D : (t < C2 ? t - T1 : t);
+  const hhmm = m => { m = Math.floor(m + 1e-6); return String(Math.floor(m / 60)).padStart(2, '0') + ':' + String(m % 60).padStart(2, '0'); };
+  const mss = s => Math.floor(s / 60) + ':' + String(Math.floor(s % 60)).padStart(2, '0');
+  const css = document.createElement('style');
+  css.textContent = '#play{position:absolute;top:12px;left:50%;transform:translateX(-50%);z-index:5;display:flex;align-items:center;gap:8px;' +
+    'background:rgba(10,12,13,.9);border:1px solid var(--line);border-radius:8px;padding:6px 10px;width:min(620px,calc(100vw - 24px))}' +
+    '#play button{min-width:34px}#play input{flex:1;accent-color:#ff4a3a;min-width:60px}' +
+    '#playClock{font:700 18px/1 "DIN Alternate","Menlo",monospace;color:#ff4a3a;background:#160606;border-radius:4px;padding:4px 6px;letter-spacing:.06em}' +
+    '#playClock.off{color:#5a2a26}#playFilm{color:var(--soft);font-size:12px;white-space:nowrap}' +
+    '@media (max-width:760px){#play{top:58px}#playFilm{display:none}#cap .hint{display:none}}';
+  document.head.appendChild(css);
+  const bar = document.createElement('div'); bar.id = 'play';
+  bar.innerHTML = '<button id="playBtn" title="Play the film on the map">▶</button>' +
+    '<input id="playPos" type="range" min="0" max="' + LEN + '" step="0.1" value="0" aria-label="Film time">' +
+    '<span id="playFilm">0:00 / ' + mss(LEN) + '</span><span id="playClock" title="Time in the world of the film: one second of the film is one minute">--:--</span>' +
+    '<button id="playSpeed" title="Speed">1x</button>';
+  document.body.appendChild(bar);
+  const btn = bar.querySelector('#playBtn'), pos = bar.querySelector('#playPos'), film = bar.querySelector('#playFilm');
+  const clock = bar.querySelector('#playClock'), speedBtn = bar.querySelector('#playSpeed');
+  let t = 0, playing = false, speed = 1, last = 0, current = -1, used = false;
+  const chapterAt = s => { let i = 0; while (i + 1 < CH.length && CH[i + 1][0] <= s) i++; return i; };
+  function show(s) {
+    pos.value = s; film.textContent = mss(s) + ' / ' + mss(LEN);
+    if (s >= OFF) { clock.textContent = '--:--'; clock.classList.add('off'); } else { clock.textContent = hhmm(world(s)); clock.classList.remove('off'); }
+    const i = chapterAt(s);
+    if (i !== current) {
+      current = i; const [, view, text] = CH[i];
+      if (view && view !== '-') setView(view);
+      if (view === '-') setView('section');
+      cap$.innerHTML = '<b>Now in the film</b> · ' + text +
+        '<span class="hint">One second of the film is one minute for the heroes. The red clock is the time in their world.</span>';
+    }
+  }
+  function frame(now) {
+    if (!playing) return;
+    const dt = Math.min(0.25, (now - last) / 1000); last = now;
+    t += dt * speed;
+    if (t >= LEN) { t = LEN; playing = false; btn.textContent = '▶'; }
+    show(t);
+    if (playing) requestAnimationFrame(frame);
+  }
+  btn.onclick = () => {
+    playing = !playing; btn.textContent = playing ? '❚❚' : '▶';
+    if (playing) { if (t >= LEN) t = 0; if (!used) { used = true; current = -1; } last = performance.now(); show(t); requestAnimationFrame(frame); }
+  };
+  pos.oninput = () => { t = parseFloat(pos.value); used = true; current = -1; show(t); };
+  speedBtn.onclick = () => { speed = speed === 1 ? 4 : (speed === 4 ? 16 : 1); speedBtn.textContent = speed + 'x'; };
+  clock.textContent = hhmm(world(0));
+  window.__play = { chapters: CH, world, show: s => { t = s; current = -1; show(s); } };
+})();
+setMode('scheme'); setView('section'); if (innerWidth < 760 || innerHeight < 500) document.body.classList.add('nopanel'); loop();
 </script>
 </body>
 </html>
