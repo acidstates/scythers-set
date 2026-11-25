@@ -5,4 +5,7 @@ Each shot of the film is staged in this map.
 
 Open the map: https://acidstates.github.io/scythers-set/
 
+Press Play to run the film on the map. The red clock shows the time in the world of the film:
+one second of the film is one minute for the heroes. The ending of the film is not on the public map.
+
 Visits are counted with GoatCounter (no cookies, no personal data).
