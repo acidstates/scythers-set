@@ -5,6 +5,7 @@ Usage: python3 tools/check_page.py index.html <out.mjs>
 The check stops with an error in each of these cases:
 - The page has a block that hides a part of the map. The public map shows the whole map.
 - A part of the map is not in the page.
+- A text of the ending is not in the page, or Play stops before the ending. The public map hides nothing.
 - A label, a caption or a button text of the page has a draft word.
 - The page has Russian text. The four Russian letters of the W A S D key handler are key codes.
 It writes the module script of the page to <out.mjs>, so that "node --check" can read it.
@@ -20,7 +21,14 @@ MAP_PARTS = (
     "'nestWetMass'", "'nestSpiderBodies'", "'glowNestWall'", "'corridorCoffeeMachine'", "'serverRacks'",
     "'ductHorizontal'", "'ventDraftRiser'", "'level2StairSteps'", "addBtn('level2', 'Level two')",
 )
-DRAFT_WORDS = re.compile(r"\bnest\b|\(draft\)|episode 5", re.I)
+DRAFT_WORDS = re.compile(r"\(draft\)|episode 5", re.I)
+# The words of the ending that an older page took out of the labels, and the last chapters of Play.
+ENDING_TEXTS = (
+    "'Shift canteen: the nest'", "the shift canteen (the nest)", "'Duct to the canteen hood, to the nest'",
+    '"The canteen is the nest"', '"Black: the title. The film ends"',
+)
+# The text of a Play that stops before the ending.
+PLAY_STOP = "not on the public map"
 TEXT_CALLS = re.compile(r"(?:label|planLbl|lbl|ventLabel|addBtn)\((?:'[^']*', )?[`']([^`']*)[`']")
 CAPTIONS = re.compile(r"cap\$\.innerHTML = '([^']*)'")
 SHOT_TEXT = re.compile(r"txt: '([^']*)'")
@@ -39,6 +47,11 @@ def main():
     for part in MAP_PARTS:
         if part not in text:
             faults.append("a part of the map is not in the page: " + part)
+    for words in ENDING_TEXTS:
+        if words not in text:
+            faults.append("a text of the ending is not in the page: " + words)
+    if PLAY_STOP in text:
+        faults.append("Play stops before the ending: " + PLAY_STOP)
     for pattern in (TEXT_CALLS, CAPTIONS, SHOT_TEXT):
         for match in pattern.finditer(text):
             words = match.group(1)
@@ -58,7 +71,8 @@ def main():
     if faults:
         raise SystemExit(1)
     print("PASS check_page: no block hides a part of the map, the %d map parts are in the page, "
-          "no text has a draft word, no Russian text" % len(MAP_PARTS))
+          "the %d texts of the ending are in the page, Play runs to the end, "
+          "no text has a draft word, no Russian text" % (len(MAP_PARTS), len(ENDING_TEXTS)))
 
 
 if __name__ == "__main__":
