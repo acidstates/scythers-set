@@ -8,9 +8,9 @@ Open the map: https://acidstates.github.io/scythers-set/
 Press Play to run the film on the map. The red clock shows the time in the world of the film:
 one second of the film is one minute for the heroes. Play does not show the ending of the film.
 
-Play also shows where each hero and each creature is at that second of the film: a coloured dot with a name
-for Ren, Hale, Kade, the squad, the four scientists and each creature. The dots stop where the ending starts. Play has two modes: Map shows a wide view with
-the dots in the frame, Shots moves the view to the camera of each scene.
+Play also shows where each hero and each creature is at that second of the film. A coloured dot with a name
+shows Ren, Hale, Kade, the squad, the four scientists and each creature. The dots stop where the ending starts.
+Play has two modes: Map shows a wide view with the dots in the frame, Shots moves the view to the camera of each scene.
 
 The eight security cameras of Kade hang in their rooms (labels CCTV 1 to CCTV 8). The monitor wall in his guard
 post shows what they see now: press "Kade: his monitor wall".
