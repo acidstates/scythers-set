@@ -32,7 +32,6 @@ body.nopanel #panel{display:none}
 body.nopanel #showPanel{display:block}
 @media (max-width:760px){#panel{width:min(270px,86vw)}#cap{font-size:12px;max-width:94vw;bottom:8px}.lbl{font-size:9px;padding:1px 4px}.lbl.plan{font-size:10px}.lbl.plan.small{display:none}}
 @media (max-width:760px) and (orientation:portrait){#cap::after{content:"Turn the phone sideways for a larger view";display:block;color:var(--soft);font-size:11px;margin-top:3px}}
-.lbl.pubhide{display:none!important}
 </style>
 <script data-goatcounter="https://acidstates.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>
 </head>
@@ -658,7 +657,7 @@ label('Hall of capsules: a row of capsules; in ep. 4 shutters drop over them', [
 label('Empty cell: the ball rolls out of here (ep. 4)', [-21.5, 3.3, -3.9]);
 label('Three slashes through the steel wall (ep. 4, shot 8)', [-12.2, 2.4, HZ1 + 0.1]);
 label('Control post (the room of part one): two broken capsules, the vent', [-14.5, 2.6, 6.2]);
-label('Squad route (ep. 4): down the shaft, to the lab', [-4, 0.1, CZ - 0.4]);
+label('Squad route (ep. 4): down the shaft, to the lab; then Kade leads Ren and Hale here', [-4, 0.1, CZ - 0.4]);
 label('Lift: a cabin with a caged lamp, four scientists', [CBX, 2.9, CZC]);
 label('Shaft of the lift', [CBX, 3.4, SH.z0]);
 label('Right turn', [BXC, 2.2, CZ]);
@@ -3223,7 +3222,7 @@ function setView(id) {
   if (window.__vent48.ventView(id)) {
     plan = false; freeView = true; dark = false; shaftOn = false; planControls.enabled = false; planFloors.visible = false; markers.visible = false; camLabels.forEach(e => e.style.display = 'none');
     for (const [k, b] of Object.entries(btns)) b.classList.toggle('on', k === id);
-    cap$.innerHTML = '<b>Vents: route of the creature</b> · from the torn-off grate in the hall of capsules to the grate in the control post: 33.4 m; the marks are the metres to the control post, as on the tracker';
+    cap$.innerHTML = '<b>Vents: route of the creature</b> · from the torn-off grate in the hall of capsules to the grate in the control post: 33.4 m; the marks are the metres to the control post, as on the tracker; the translucent blue duct goes on to the upper levels';
     paint(mode); applyLights();
     return;
   }
@@ -3466,15 +3465,6 @@ window.__lab.views.push('ventPath'); Object.assign(window.__lab, { setAlarm: on 
 Object.assign(window.__lab, { setSigns, signsOn: () => window.__rooms2.signsOn(), rooms2: () => window.__rooms2 });
 window.__lab.views.push('surface'); Object.assign(window.__lab, { setGround: on => window.__ground.setGround(on), groundEnabled: () => window.__ground.enabled() });
 window.__lab.views.push('section'); Object.assign(window.__lab, { setTurn: on => window.__look.setTurn(on), turning: () => window.__look.turning(), setShutters: values => window.__look.setShutters(values), look: () => window.__look, labels: () => labels, renderer });
-
-(() => {
-  const HIDE_MESH = /nest(WetMass|RedDepth|Spider)|glowNest|corridorCoffee|ventDraft(?!KitchenHood)|^server|^duct(Horizontal|Vertical|ShaftOpening)|level2Stair|stairTopLight/i;
-  const HIDE_LABEL = /Duct to the canteen|Coffee machine|riser|Stairs to the surface|Emergency exit of level two|server room|Vent duct|Main lift landing|Corridor of level two/i;
-  // A view of the page can set "visible" again, so the property is fixed to false.
-  scene.traverse(o => { if ((o.name && HIDE_MESH.test(o.name)) || (o.userData && o.userData.unit4Route)) Object.defineProperty(o, 'visible', { get: () => false, set: () => {} }); });
-  for (const el of document.querySelectorAll('.lbl')) if (HIDE_LABEL.test(el.textContent)) el.classList.add('pubhide');
-  if (btns.level2) btns.level2.style.display = 'none';
-})();
 
 // ---------- Play: the film clock and the scenes of the film on the map (built by play_block.py) ----------
 (() => {
