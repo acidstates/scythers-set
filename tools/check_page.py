@@ -2,16 +2,25 @@
 
 Usage: python3 tools/check_page.py index.html <out.mjs>
 
-The check stops with an error if:
-- the page has no block that hides the rooms of the ending;
-- a label, a caption or a button text of the page names the ending;
-- the page has Russian text (the four Russian letters of the W A S D key handler are key codes).
+The check stops with an error in each of these cases:
+- The page has a block that hides a part of the map. The public map shows the whole map.
+- A part of the map is not in the page.
+- A label, a caption or a button text of the page has a draft word.
+- The page has Russian text. The four Russian letters of the W A S D key handler are key codes.
 It writes the module script of the page to <out.mjs>, so that "node --check" can read it.
 """
 import re
 import sys
 
-ENDING_WORDS = re.compile(r"\bnest\b|shift canteen|\(draft\)|episode 5", re.I)
+# The marks of a block that hides a part of the map.
+HIDE_MARKS = ("HIDE_MESH", "HIDE_LABEL", "pubhide", "btns.level2.style.display")
+# One mesh name or one button for each part of the map that an older page did not show.
+MAP_PARTS = (
+    "'nestFloor'", "'canteenTableTops'", "'canteenCounterBody'", "'ventDraftKitchenHood'", "'signPlatesLevel2'",
+    "'nestWetMass'", "'nestSpiderBodies'", "'glowNestWall'", "'corridorCoffeeMachine'", "'serverRacks'",
+    "'ductHorizontal'", "'ventDraftRiser'", "'level2StairSteps'", "addBtn('level2', 'Level two')",
+)
+DRAFT_WORDS = re.compile(r"\bnest\b|\(draft\)|episode 5", re.I)
 TEXT_CALLS = re.compile(r"(?:label|planLbl|lbl|ventLabel|addBtn)\((?:'[^']*', )?[`']([^`']*)[`']")
 CAPTIONS = re.compile(r"cap\$\.innerHTML = '([^']*)'")
 SHOT_TEXT = re.compile(r"txt: '([^']*)'")
@@ -24,17 +33,17 @@ def main():
     with open(page, encoding="utf-8") as fh:
         text = fh.read()
     faults = []
-    if "const HIDE_MESH = /" not in text or "const HIDE_LABEL = /" not in text:
-        faults.append("the block that hides the rooms of the ending is missing")
-    hide_label = re.search(r"const HIDE_LABEL = /(.*?)/i;", text)
-    hidden = re.compile(hide_label.group(1), re.I) if hide_label else None
+    for mark in HIDE_MARKS:
+        if mark in text:
+            faults.append("the page hides a part of the map: " + mark)
+    for part in MAP_PARTS:
+        if part not in text:
+            faults.append("a part of the map is not in the page: " + part)
     for pattern in (TEXT_CALLS, CAPTIONS, SHOT_TEXT):
         for match in pattern.finditer(text):
             words = match.group(1)
-            if hidden and hidden.search(words):
-                continue                      # the page hides this label
-            if ENDING_WORDS.search(words):
-                faults.append("text names the ending: " + words[:80])
+            if DRAFT_WORDS.search(words):
+                faults.append("text has a draft word: " + words[:80])
     for number, line in enumerate(text.split("\n"), 1):
         if CYRILLIC.search(line) and not KEYBOARD.search(line):
             faults.append("Russian text in line %d" % number)
@@ -48,7 +57,8 @@ def main():
         print("FAIL", fault)
     if faults:
         raise SystemExit(1)
-    print("PASS check_page: the hide block is present, no text names the ending, no Russian text")
+    print("PASS check_page: no block hides a part of the map, the %d map parts are in the page, "
+          "no text has a draft word, no Russian text" % len(MAP_PARTS))
 
 
 if __name__ == "__main__":
