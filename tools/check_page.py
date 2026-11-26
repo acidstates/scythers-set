@@ -25,7 +25,7 @@ DRAFT_WORDS = re.compile(r"\(draft\)|episode 5", re.I)
 # The words of the ending that an older page took out of the labels, and the last chapters of Play.
 ENDING_TEXTS = (
     "'Shift canteen: the nest'", "the shift canteen (the nest)", "'Duct to the canteen hood, to the nest'",
-    '"The canteen is the nest"', '"Black: the title. The clock stops at 06:59"',
+    '"The canteen is the nest"', '"Black: the title. The film ends"',
 )
 # The text of a Play that stops before the ending.
 PLAY_STOP = "not on the public map"
